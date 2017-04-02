@@ -3,10 +3,9 @@ import time
 from tweepy import TweepError
 from logscrape import DNSReader, LogFileReader
 from constants.twitter_account_pool import account_pool
+import json
 
 from collections import deque
-from urllib.parse import urlparse
-import asyncio
 
 # reader = DNSReader("/root/app-log")
 reader = DNSReader("/mnt/sda1/app/app.log")
@@ -33,6 +32,9 @@ tweet_queue = deque()
 #         print(t.text)
 
 suppressed_domains_dict = {}
+
+logs = {}
+
 
 def suppress_uber_domains(tweet):
     for s in [
@@ -115,12 +117,12 @@ def restore_api_access():
 
 def generate_tweet_string(domain_regex_match, src_ip):
     if not suppress_uber_domains(domain_regex_match) and src_ip != "127.0.0.1":
-
         if "co.uk" in domain_regex_match:
             dom_string = ".".join(domain_regex_match.split(".")[-3:])
         else:
             dom_string = ".".join(domain_regex_match.split(".")[-2:])
 
+        logs[(src_ip, dom_string)] += 1
         if "." in dom_string:
             if suppressed_domains_dict.get(dom_string) is None:
                 pass
@@ -131,6 +133,16 @@ def generate_tweet_string(domain_regex_match, src_ip):
             return "{} visited {}".format(src_ip, dom_string)
         else:
             return None
+
+
+def dump_logs():
+    with open('logs.json') as f:
+        data = json.load(f)
+
+    data.update(logs)
+
+    with open('logs.json', 'w') as f:
+        json.dump(data, f)
 
 
 def event_loop():
@@ -144,7 +156,7 @@ def event_loop():
             str = generate_tweet_string(d, src)
             if str is not None:
                 tweet_queue.append(str)
-
+        dump_logs()
         # print("Post_Tweet")
         post_tweet()
         # print("Restore_API_ACCESS")
