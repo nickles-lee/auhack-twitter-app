@@ -124,10 +124,10 @@ def generate_tweet_string(domain_regex_match, src_ip):
 
         logs[(src_ip, dom_string)] += 1
         if "." in dom_string:
-            if suppressed_domains_dict.get(dom_string) is None:
-                pass
-            elif suppressed_domains_dict.get(dom_string) <= 900:
-                return None
+            # if suppressed_domains_dict.get(dom_string) is None:
+            #     pass
+            # elif suppressed_domains_dict.get(dom_string) <= 900:
+            #     return None
 
             suppressed_domains_dict[dom_string] = time.time()
             return "{} visited {}".format(src_ip, dom_string)
